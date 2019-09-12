@@ -36,6 +36,14 @@ namespace FileSharing.Sockets
             }
         }
 
+
+        public static async Task DisconnectTap(this Socket socket, bool reuseSocket)
+        {
+            var disconnectTask = Task.Factory.FromAsync(socket.BeginDisconnect, socket.EndDisconnect, reuseSocket, null);
+            await disconnectTask;
+        }
+
+
         public static async Task<Socket> AcceptTap(this Socket listenSocket)
         {
             Socket workSocket;
