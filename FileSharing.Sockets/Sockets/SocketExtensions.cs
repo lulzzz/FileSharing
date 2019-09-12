@@ -72,8 +72,8 @@ namespace FileSharing.Sockets
         public static async Task<int> ReceiveTap(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags)
         {
             int byteReceived;
-            var asyncResult = socket.BeginReceive(buffer, offset, size, socketFlags, null, null);
-            byteReceived = await Task<int>.Factory.FromAsync(asyncResult, _ => socket.EndReceive(asyncResult));
+            var receiveTask = Task<int>.Factory.FromAsync((callback, state) => socket.BeginReceive(buffer, offset, size, socketFlags, callback, state), socket.EndReceive, null);
+            byteReceived = await receiveTask.ConfigureAwait(false);
             return byteReceived;
         }
 
