@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MasterServer.Storage
+namespace MasterServer.Storages
 {
     class SharedFiles
     {
