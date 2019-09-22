@@ -8,6 +8,14 @@ using System.Threading.Tasks;
 
 namespace FileSharing.Sockets
 {
+
+    public struct SocketReceiveFromAsyncResult
+    {
+        public int ReceivedBytes;
+
+        public EndPoint RemoteEndPoint;
+    }
+
     public static partial class SocketExtensions
     {
         public static async Task ConnectTap(this Socket socket, string remoteIpAddress, int port, int timeoutMs)
@@ -75,6 +83,46 @@ namespace FileSharing.Sockets
             var receiveTask = Task<int>.Factory.FromAsync((callback, state) => socket.BeginReceive(buffer, offset, size, socketFlags, callback, state), socket.EndReceive, null);
             byteReceived = await receiveTask.ConfigureAwait(false);
             return byteReceived;
+        }
+
+        public static async Task<SocketReceiveFromAsyncResult> ReceiveFromAsync(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags)
+        {
+            EndPoint remoteEndPoint;
+
+            if (socket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork)
+            {
+                remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+            }
+            else
+            {
+                remoteEndPoint = new IPEndPoint(IPAddress.IPv6Any, 0);
+            }
+
+            var socketReceiveFromResult = await Task<SocketReceiveFromAsyncResult>.Factory.FromAsync(
+                (callback, state) => socket.BeginReceiveFrom(buffer, offset, size, socketFlags, ref remoteEndPoint, callback, state),
+                (asyncResult) =>
+                    {
+                        int receivedBytes = socket.EndReceiveFrom(asyncResult, ref remoteEndPoint);
+
+                        return new SocketReceiveFromAsyncResult()
+                        {
+                            ReceivedBytes = receivedBytes,
+                            RemoteEndPoint = remoteEndPoint
+                        };
+                    },
+                null);
+
+            return socketReceiveFromResult;
+        }
+
+        public static async Task<int> SendToAsync(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags, EndPoint remoteEndPoint)
+        {
+            int sentBytes = await Task<int>.Factory.FromAsync(
+                (callback, state) => socket.BeginSendTo(buffer, offset, size, socketFlags, remoteEndPoint, callback, state),
+                asyncResult => socket.EndSendTo(asyncResult),
+                null);
+
+            return sentBytes;
         }
 
         public static async Task<int> SendTap(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags, int timeoutMs)
