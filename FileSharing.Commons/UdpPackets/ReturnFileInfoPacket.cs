@@ -106,7 +106,7 @@ namespace FileSharing.Commons.UdpPackets
             }
         }
 
-        public ReturnFileInfoPacket(int fileID, byte[] sha512Hash, string fileName, long fileSize, int maxBlockSize, int blockCount) : base((byte)FileServerOpCode.ReturnFileInfo)
+        public ReturnFileInfoPacket(int fileID, byte[] sha512Hash, long fileSize, int maxBlockSize, int blockCount, string fileName) : base((byte)FileServerOpCode.ReturnFileInfo)
         {
             using (var writer = base.GetPayloadBufferWriter())
             {
