@@ -10,12 +10,15 @@ namespace FileSharing.Sockets.Packets
     public class TcpPacket : IDisposable
     {
         /*
+         * "TCP Packet" at application level.
+         * 
+         * Below are bytes will be written to TCP stream at transport layer.
          *  ____________________
          * |___OpCode: 1 byte___|
          * |                    |
-         * |   PayloadLength    |
+         * |   PayloadLength    | Header: 5 bytes
          * |       4 bytes      |
-         * |____________________|
+         * |____________________|________________
          * |                    |
          * |                    |
          * |       Payload      |
@@ -30,74 +33,87 @@ namespace FileSharing.Sockets.Packets
          *  Payload: byte[]
          */
 
-        public const int HeaderLength = sizeof(byte) + sizeof(int);
+        public const int HeaderLength = sizeof(byte) + sizeof(int); // 5 bytes
 
-        private byte type;
+        public byte PacketType { get; set; }
 
-        private MemoryStream buffer;
-
-        private int length;
-
-        public byte PacketType
-        {
-            get => this.type;
-            set
-            {
-                this.type = value;
-                long currentPossition = this.buffer.Position;
-
-                this.buffer.Position = 4;
-                this.buffer.WriteByte(this.type);
-
-                this.buffer.Position = currentPossition;                
-            }
-        }
-
-        public int Length
+        public int PayloadLength
         {
             get
             {
-                this.UpdatePacketLengthField();
-                return this.length;
+                return (int)this.PayloadBuffer.Length;
             }
-            private set => this.length = value;
         }
 
-        public TcpPacket(byte type, int payloadLength = 0)
+        public MemoryStream PayloadBuffer { get; }
+
+        public int PacketLength
         {
-            this.type = type;
-            int packetLength = HeaderLength + payloadLength;
+            get
+            {
+                return HeaderLength + this.PayloadLength;
+            }
+        }
 
-            this.buffer = new MemoryStream(packetLength);
-            this.buffer.Write(BitConverter.GetBytes(payloadLength), 0, 4);
-            this.buffer.WriteByte(type);
+        public TcpPacket(byte packetType)
+        {
+            this.PacketType = packetType;
+            this.PayloadBuffer = new MemoryStream();
+        }
 
-            this.length = packetLength;
+        public TcpPacket(byte[] packetBytes)
+        {
+            this.PayloadBuffer = new MemoryStream();
+
+            using (var reader = new BinaryReader(new MemoryStream(packetBytes), Encoding.UTF8, false))
+            {
+                this.PacketType = reader.ReadByte();
+                var payloadLength = reader.ReadInt32();
+                var payloadBytes = reader.ReadBytes(payloadLength);
+                this.PayloadBuffer.Write(payloadBytes, 0, payloadLength);
+            }
+        }
+
+        public TcpPacket(byte packetType, byte[] payload)
+        {
+            this.PacketType = packetType;
+            this.PayloadBuffer = new MemoryStream();
+            PayloadBuffer.Write(payload, 0, payload.Length);
+        }
+
+        public TcpPacket(TcpPacket tcpPacket)
+        {
+            this.PacketType = tcpPacket.PacketType;
+            this.PayloadBuffer = new MemoryStream();
+            tcpPacket.PayloadBuffer.WriteTo(this.PayloadBuffer);
         }
 
         public byte[] GetBytes()
         {
-            this.UpdatePacketLengthField();
-            return this.buffer.ToArray();
+            byte[] bytes = new byte[this.PacketLength];
+            using (var writer = new BinaryWriter(output: new MemoryStream(bytes), encoding: Encoding.UTF8, leaveOpen: false))
+            {
+                writer.Write(this.PacketType);
+                writer.Write(this.PayloadLength);
+                writer.Write(this.PayloadBuffer.ToArray());
+            }
+
+            return bytes;
         }
 
-        public BinaryWriter GetWriter()
+        public byte[] GetPayloadBytes()
         {
-            return new BinaryWriter(this.buffer, Encoding.UTF8, true);
+            return this.PayloadBuffer.ToArray();
         }
 
-        private void UpdatePacketLengthField()
+        public BinaryReader GetPayloadBufferReader()
         {
-            if (this.length == (int)this.buffer.Position)
-                return;
+            return new BinaryReader(this.PayloadBuffer, Encoding.UTF8, true);
+        }
 
-            this.length = (int)this.buffer.Position;
-
-            // Update content-length.
-            int packetLength = this.length - HeaderLength;
-            this.buffer.Seek(0, SeekOrigin.Begin);
-            this.buffer.Write(BitConverter.GetBytes(this.length), 0, 4);
-            this.buffer.Seek(this.length, SeekOrigin.Begin);
+        public BinaryWriter GetPayloadBufferWriter()
+        {
+            return new BinaryWriter(this.PayloadBuffer, Encoding.UTF8, true);
         }
 
         public void Dispose()
@@ -115,9 +131,8 @@ namespace FileSharing.Sockets.Packets
 
             if (disposing)
             {
-                this.length = -1;
-                this.buffer.Close();
-                this.buffer.Dispose();
+                this.PayloadBuffer.Close();
+                this.PayloadBuffer.Dispose();
             }
 
             this.disposed = true;
