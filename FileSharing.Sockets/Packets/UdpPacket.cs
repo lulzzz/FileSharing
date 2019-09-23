@@ -9,9 +9,10 @@ namespace FileSharing.Sockets.Packets
 {
     public class UdpPacket : IDisposable
     {
-        public const int PacketTypeSize = sizeof(byte);
         /*
-         * UDP Datagram's Data
+         * "UDP Packet" at application level.
+         * 
+         * Below is UDP Datagram's data.
          *  ____________________
          * |___OpCode: 1 byte___|
          * |                    |
@@ -24,6 +25,8 @@ namespace FileSharing.Sockets.Packets
          * C# Socket receives only one UDP Datagram at a time.
          * 
          */
+
+        public const int PacketTypeSize = sizeof(byte);
 
         public byte PacketType { get; set; }
 
@@ -69,7 +72,7 @@ namespace FileSharing.Sockets.Packets
 
         public byte[] GetBytes()
         {
-            byte[] bytes = new byte[PacketTypeSize + this.PayloadBuffer.Length];
+            byte[] bytes = new byte[PacketLength];
 
             bytes[0] = this.PacketType;
             this.PayloadBuffer.ToArray().CopyTo(array: bytes, index: 1);
