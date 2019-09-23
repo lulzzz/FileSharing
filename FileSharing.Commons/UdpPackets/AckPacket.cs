@@ -14,13 +14,17 @@ namespace FileSharing.Commons.UdpPackets
         {
             get
             {
-                return base.GetPayloadBufferReader().ReadByte();
+                using (var reader = base.GetPayloadBufferReader())
+                {
+                    return reader.ReadByte();
+                }
             }
             set
             {
-                var writer = base.GetPayloadBufferWriter();
-                writer.Seek(0, SeekOrigin.Begin);
-                writer.Write(value);
+                using (var writer = base.GetPayloadBufferWriter())
+                {
+                    writer.Write(value);
+                }
             }
         }
 
@@ -31,7 +35,7 @@ namespace FileSharing.Commons.UdpPackets
 
         public AckPacket(UdpPacket udpPacket) : base(udpPacket)
         {
-            
+
         }
     }
 }
