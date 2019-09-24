@@ -26,7 +26,10 @@ namespace FileSharing.Sockets
         }
     }
 
-    public class TcpSocket
+    /// <summary>
+    /// Socket wrapper for TCP protocol.
+    /// </summary>
+    public class TcpSocket : IDisposable
     {
         private Socket workSocket;
         private EndPoint ipEndPoint;
@@ -98,31 +101,7 @@ namespace FileSharing.Sockets
             if (this.cleanedUp)
                 return;
 
-            try
-            {
-                this.workSocket.Shutdown(SocketShutdown.Both);
-            }
-            finally
-            {
-                this.workSocket.Close();
-                this.cleanedUp = true;
-            }
-        }
-
-        public void Close(int timeout)
-        {
-            if (this.cleanedUp)
-                return;
-
-            try
-            {
-                this.workSocket.Shutdown(SocketShutdown.Both);
-            }
-            finally
-            {
-                this.workSocket.Close(timeout);
-                this.cleanedUp = true;
-            }
+            this.Dispose();
         }
 
         public bool IsConnected()
@@ -167,7 +146,38 @@ namespace FileSharing.Sockets
 
         public async Task<int> ReceiveAsync(byte[] data, int offset, int size)
         {
-            return await this.workSocket.ReceiveTap(data, offset, size, SocketFlags.None);
+            return await this.workSocket.ReceiveAsync(data, offset, size, SocketFlags.None);
+        }
+
+        private bool disposed = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this.disposed)
+                return;
+
+            if (disposing)
+            {
+                try
+                {
+                    this.workSocket.Shutdown(SocketShutdown.Both);
+                }
+                finally
+                {
+                    this.workSocket.Close();
+                    this.workSocket = null;
+
+                    this.cleanedUp = true;
+                }
+            }
+
+            disposed = true;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

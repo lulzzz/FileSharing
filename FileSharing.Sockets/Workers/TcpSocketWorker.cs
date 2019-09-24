@@ -15,12 +15,14 @@ namespace FileSharing.Sockets.Workers
         /**
          * 1 Worker per 1 particular TCP connection (1 client).
          * 
+         * The socket pass into TcpSocketWorker instance is a work socket,
+         * means it is being connected and ready to send and receive data.
+         * 
          * 1. Parsing incoming stream of bytes to TCP Packet (a message at application level).
          * 2. Processing the received packet.
          * 3. Return a packet to the client if needed.
          * 
          * Request -> [Response]: Optional
-         * 
          * 
          * Working as sequential mode. Don't need to work at concurrent mode.
          * 
