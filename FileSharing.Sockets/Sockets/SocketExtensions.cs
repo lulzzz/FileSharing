@@ -62,7 +62,7 @@ namespace FileSharing.Sockets
             return workSocket;
         }
 
-        public static async Task<int> ReceiveTap(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags, int timeoutMs)
+        public static async Task<int> ReceiveAsync(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags, int timeoutMs)
         {
             int bytesReceived;
             var asyncResult = socket.BeginReceive(buffer, offset, size, socketFlags, null, null);
@@ -77,7 +77,7 @@ namespace FileSharing.Sockets
             return bytesReceived;
         }
 
-        public static async Task<int> ReceiveTap(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags)
+        public static async Task<int> ReceiveAsync(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags)
         {
             int byteReceived;
             var receiveTask = Task<int>.Factory.FromAsync((callback, state) => socket.BeginReceive(buffer, offset, size, socketFlags, callback, state), socket.EndReceive, null);
@@ -136,7 +136,7 @@ namespace FileSharing.Sockets
                 throw new TimeoutException();
             }
 
-            byteSent = await sendBytesTask;
+            byteSent = await sendBytesTask.ConfigureAwait(false);
             return byteSent;
         }
 
