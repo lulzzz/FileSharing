@@ -9,6 +9,8 @@ namespace FileSharing.Sockets.Packets
 {
     public class UdpPacket : IDisposable
     {
+        public const int MaxUDPSize = 65_000;
+
         /*
          * "UDP Packet" at application level.
          * 

@@ -30,8 +30,6 @@ namespace FileServer.Services
 
     class ClientService
     {
-        public const int MaxUDPSize = 65_000;
-
         public const int MaxFileBlockSize = 8192; // 8 kbytes.
 
         private ClientServiceSettings settings;
@@ -83,10 +81,10 @@ namespace FileServer.Services
 
         private async Task ReceiveLoop(CancellationToken cancellationToken)
         {
-            byte[] buffer = new byte[MaxUDPSize];
+            byte[] buffer = new byte[UdpPacket.MaxUDPSize];
             while (!cancellationToken.IsCancellationRequested)
             {
-                var receiveResult = await this.udpSocket.ReceiveFromAsync(buffer, 0, MaxUDPSize, SocketFlags.None);
+                var receiveResult = await this.udpSocket.ReceiveFromAsync(buffer, 0, UdpPacket.MaxUDPSize, SocketFlags.None);
                 byte[] data = new byte[receiveResult.ReceivedBytes];
                 this.incommingData.Add((data: data, client: receiveResult.RemoteEndPoint));
             }
