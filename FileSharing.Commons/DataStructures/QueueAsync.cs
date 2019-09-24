@@ -13,19 +13,23 @@ namespace FileSharing.Commons.DataStructures
 
         public void Add(T item)
         {
-            TaskCompletionSource<T> tcs = null;
-
             lock (this.m_collection)
             {
-                if (this.m_waiting.Count > 0)
-                    tcs = this.m_waiting.Dequeue();
-                else
-                    this.m_collection.Enqueue(item);
-            }
+                bool isSet = false;
+                while (this.m_waiting.Count > 0)
+                {
+                    TaskCompletionSource<T> tcs = this.m_waiting.Dequeue();
+                    if (tcs.TrySetResult(item))
+                    {
+                        isSet = true;
+                        break;
+                    }
+                }
 
-            if (tcs != null)
-            {
-                tcs.TrySetResult(item);
+                if (!isSet)
+                {
+                    this.m_collection.Enqueue(item);
+                }
             }
         }
 
@@ -38,7 +42,7 @@ namespace FileSharing.Commons.DataStructures
                 else
                 {
                     var tcs = new TaskCompletionSource<T>();
-                    m_waiting.Enqueue(tcs);
+                    this.m_waiting.Enqueue(tcs);
                     return tcs.Task;
                 }
             }
