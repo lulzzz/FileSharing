@@ -11,6 +11,17 @@ namespace FileSharing.Commons.DataStructures
         private readonly Queue<T> m_collection = new Queue<T>();
         private readonly Queue<TaskCompletionSource<T>> m_waiting = new Queue<TaskCompletionSource<T>>();
 
+        /// <summary>
+        /// The return value is approximate.
+        /// </summary>
+        public int Count
+        {
+            get
+            {
+                return this.m_collection.Count;
+            }
+        }
+
         public void Add(T item)
         {
             lock (this.m_collection)
