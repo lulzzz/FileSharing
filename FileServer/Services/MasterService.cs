@@ -1,5 +1,6 @@
 ﻿using FileServer.Storages;
 using FileSharing.Commons;
+using FileSharing.Commons.OpCodes;
 using FileSharing.Sockets;
 using FileSharing.Sockets.Packets;
 using FileSharing.Sockets.Workers;
@@ -134,9 +135,9 @@ namespace FileServer.Services
         {
             if (!this.isRunning)
                 return;
+            this.isRunning = false;
 
             this.MasterServer.TcpSocketWorker.Close();
-            this.isRunning = false;
         }
 
         private async Task ExchangeOnStart()

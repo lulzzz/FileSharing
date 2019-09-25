@@ -1,4 +1,5 @@
-﻿using FileSharing.Sockets.Packets;
+﻿using FileSharing.Commons.OpCodes;
+using FileSharing.Sockets.Packets;
 using System;
 using System.Collections.Generic;
 using System.IO;
