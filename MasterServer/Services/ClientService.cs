@@ -1,4 +1,5 @@
 ﻿using FileSharing.Commons;
+using FileSharing.Commons.OpCodes;
 using FileSharing.Sockets;
 using FileSharing.Sockets.Packets;
 using FileSharing.Sockets.Workers;
@@ -106,6 +107,7 @@ namespace MasterServer.Services
             int id = Interlocked.Increment(ref this.incrementID);
             var client = new Client(id, tcpSocket, this.tcpPacketProcessor);
             client.ClientClosed += Client_ClientClosed;
+            client.TcpSocketWorker.Run();
         }
 
         private void Client_ClientClosed(object sender, ClientClosedArgs e)
@@ -126,18 +128,24 @@ namespace MasterServer.Services
         {
             if (!this.isRunning)
                 return;
+            this.isRunning = false;
 
             this.tcpSocketListener.Stop();
-            this.isRunning = false;
+            foreach (var item in this.clients)
+            {
+                var client = item.Value;
+                client.TcpSocketWorker.Close();
+            }
+            this.clients.Clear();
         }
 
 
         private void InitializeTcpPacketProcessor()
         {
-            this.tcpPacketProcessor.Add((byte)MasterServerOpCode.RequestFileList, this.ProcessRequestFileList);
+            this.tcpPacketProcessor.Add((byte)MasterServerOpCode.RequestFileList, this.HandleRequestFileList);
         }
 
-        private TcpPacket ProcessRequestFileList(TcpPacket tcpPacket, ClientState state)
+        private TcpPacket HandleRequestFileList(TcpPacket tcpPacket, ClientState state)
         {
             var returnPacket = new TcpPacket((byte)MasterServerOpCode.ReturnFileList);
             using (var writer = returnPacket.GetPayloadBufferWriter())
