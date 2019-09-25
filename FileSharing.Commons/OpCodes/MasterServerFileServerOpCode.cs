@@ -1,4 +1,4 @@
-﻿namespace FileSharing.Commons
+﻿namespace FileSharing.Commons.OpCodes
 {
     public enum MasterServerFileServerOpCode : byte
     {
