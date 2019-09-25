@@ -1,4 +1,5 @@
 ﻿using FileSharing.Commons;
+using FileSharing.Commons.OpCodes;
 using FileSharing.Sockets;
 using FileSharing.Sockets.Packets;
 using FileSharing.Sockets.Workers;
@@ -46,7 +47,7 @@ namespace MasterServer.Services
 
         public TcpSocketWorker TcpSocketWorker { get; }
 
-        private FileServerState fileServerState;
+        private readonly FileServerState fileServerState;
 
         private Dictionary<byte, FileServerTcpPacketHandler> fileServerPacketProcessor;
 
@@ -97,6 +98,7 @@ namespace MasterServer.Services
         public FileServerService(FileServerServiceSettings settings)
         {
             this.settings = settings;
+            this.InitializeTcpPacketProcessor();
             this.tcpSocketListener = new TcpSocketListener(this.settings.ListenIP, this.settings.Port);
             this.fileServers = new Dictionary<int, FileServer>();
         }
@@ -128,21 +130,25 @@ namespace MasterServer.Services
                     this.Stop();
                 }
             }, TaskContinuationOptions.OnlyOnFaulted);
+
+            this.isRunning = true;
         }
 
         public void Stop()
         {
             if (!this.isRunning)
                 return;
+            this.isRunning = false;
 
             this.tokenSource.Cancel();
-            this.tcpSocketListener.Stop();
 
+            this.tcpSocketListener.Stop();
             foreach (var item in this.fileServers)
             {
                 var fileServer = item.Value;
                 fileServer.TcpSocketWorker.Close();
             }
+            this.fileServers.Clear();
 
             this.settings.FileServerMetaStorage.Clear();
         }
