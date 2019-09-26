@@ -108,11 +108,13 @@ namespace FileSharing.Sockets.Packets
 
         public BinaryReader GetPayloadBufferReader()
         {
+            this.PayloadBuffer.Seek(0, SeekOrigin.Begin);
             return new BinaryReader(this.PayloadBuffer, Encoding.UTF8, true);
         }
 
         public BinaryWriter GetPayloadBufferWriter()
         {
+            this.PayloadBuffer.Seek(this.PayloadBuffer.Length, SeekOrigin.Begin);
             return new BinaryWriter(this.PayloadBuffer, Encoding.UTF8, true);
         }
 
