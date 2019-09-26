@@ -40,6 +40,7 @@ namespace FileSharing.Client.Clients
 
         public MasterServer(TcpSocket tcpSocket, Dictionary<byte, MasterServerTcpPacketHandler> packetProcessor)
         {
+            this.packetProcessor = packetProcessor;
             this.TcpSocketWorker = new TcpSocketWorker(tcpSocket, HandleTcpPacket);
             this.TcpSocketWorkerClosed += MasterServer_TcpSocketWorkerClosed;
         }
