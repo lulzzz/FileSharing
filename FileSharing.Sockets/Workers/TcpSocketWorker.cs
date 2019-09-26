@@ -52,13 +52,12 @@ namespace FileSharing.Sockets.Workers
         {
             if (this.isClosed)
                 return;
+            this.isClosed = true;
+            this.Active = false;
 
             if (tokenSource != null)
                 this.tokenSource.Cancel();
             this.tcpSocket.Close();
-
-            this.Active = false;
-            this.isClosed = true;
 
             this.Closed?.Invoke(this, EventArgs.Empty);
         }
