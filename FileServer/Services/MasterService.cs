@@ -18,14 +18,11 @@ namespace FileServer.Services
 {
     class MasterServer
     {
-        private TcpSocket tcpSocket;
         public TcpSocketWorker TcpSocketWorker { get; private set; }
 
         public MasterServer(TcpSocket tcpSocket)
         {
-            this.tcpSocket = tcpSocket;
             this.TcpSocketWorker = new TcpSocketWorker(tcpSocket, this.HandleTcpPacket);
-
             this.TcpSocketWorker.Closed += (sender, args) =>
             {
                 this.TcpSocketWorkerClosed?.Invoke(this, EventArgs.Empty);
@@ -51,13 +48,12 @@ namespace FileServer.Services
 
         public async Task SendFileList(List<FileDetails> files)
         {
-            var jsonString = JsonConvert.SerializeObject(files);
-            byte[] jsonBytes = Encoding.UTF8.GetBytes(jsonString);
+            var json = JsonConvert.SerializeObject(files);
 
             TcpPacket tcpPacket = new TcpPacket((byte)MasterServerFileServerOpCode.ReturnFileList);
             using (var writer = tcpPacket.GetPayloadBufferWriter())
             {
-                writer.Write(jsonBytes, 0, jsonBytes.Length);
+                writer.Write(json);
             }
 
             await this.TcpSocketWorker.SendPacket(tcpPacket);
@@ -98,33 +94,16 @@ namespace FileServer.Services
                 return;
 
             TcpSocket tcpSocket = new TcpSocket(settings.MasterServerIP, settings.MasterServerPort);
-            try
-            {
-                tcpSocket.Connect();
-            }
-            catch (SocketException ex)
-            {
-                switch (ex.NativeErrorCode)
-                {
-                    case 10061:
-                        Console.Error.WriteLine($"Socket error: {ex.Message}");
-                        break;
-                    default:
-                        Console.Error.WriteLine($"Socket error {ex.NativeErrorCode}");
-                        break;
-                }
-
-                return;
-            }
+            tcpSocket.Connect();
 
             this.MasterServer = new MasterServer(tcpSocket);
             this.MasterServer.TcpSocketWorkerClosed += (sender, args) =>
             {
                 this.Stop();
             };
+            this.MasterServer.TcpSocketWorker.Run();
 
             this.isRunning = true;
-
             this.ExchangeOnStart().ContinueWith(task =>
             {
                 this.Stop();
