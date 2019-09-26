@@ -200,9 +200,12 @@ namespace MasterServer.Services
 
         private TcpPacket HandleReturnFileList(TcpPacket tcpPacket, FileServerState state)
         {
-            var jsonString = Encoding.UTF8.GetString(tcpPacket.GetPayloadBytes());
-            var files = JsonConvert.DeserializeObject<List<FileDetails>>(jsonString);
-            this.settings.FileServerMetaStorage.StoreFileList(state.ID, files);
+            using (var reader = tcpPacket.GetPayloadBufferReader())
+            {
+                var json = reader.ReadString();
+                var files = JsonConvert.DeserializeObject<List<FileDetails>>(json);
+                this.settings.FileServerMetaStorage.StoreFileList(state.ID, files);
+            }
 
             return null;
         }
