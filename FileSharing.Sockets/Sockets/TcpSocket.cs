@@ -34,7 +34,7 @@ namespace FileSharing.Sockets
         private Socket workSocket;
         private EndPoint ipEndPoint;
 
-        private bool cleanedUp;
+        private bool cleanedUp = false;
 
         public TcpSocket(string ip, int port)
         {
@@ -141,7 +141,7 @@ namespace FileSharing.Sockets
 
         public async Task<int> SendAsync(byte[] data, int offset, int size)
         {
-            return await this.workSocket.SendTap(data, offset, size, SocketFlags.None);
+            return await this.workSocket.SendAsync(data, offset, size, SocketFlags.None);
         }
 
         public async Task<int> ReceiveAsync(byte[] data, int offset, int size)

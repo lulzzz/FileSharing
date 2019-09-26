@@ -79,9 +79,10 @@ namespace FileSharing.Sockets
 
         public static async Task<int> ReceiveAsync(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags)
         {
-            int byteReceived;
-            var receiveTask = Task<int>.Factory.FromAsync((callback, state) => socket.BeginReceive(buffer, offset, size, socketFlags, callback, state), socket.EndReceive, null);
-            byteReceived = await receiveTask.ConfigureAwait(false);
+            var receiveTask = Task<int>.Factory.FromAsync(
+                (callback, state) => socket.BeginReceive(buffer, offset, size, socketFlags, callback, state),
+                (asyncResult) => socket.EndReceive(asyncResult), null);
+            int byteReceived = await receiveTask.ConfigureAwait(false);
             return byteReceived;
         }
 
@@ -140,19 +141,13 @@ namespace FileSharing.Sockets
             return byteSent;
         }
 
-        public static async Task<int> SendTap(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags)
+        public static async Task<int> SendAsync(this Socket socket, byte[] buffer, int offset, int size, SocketFlags socketFlags)
         {
-            int byteSent;
-            try
-            {
-                var asyncResult = socket.BeginSend(buffer, offset, size, socketFlags, null, null);
-                byteSent = await Task<int>.Factory.FromAsync(asyncResult, _ => socket.EndSend(asyncResult));
-            }
-            catch (SocketException ex)
-            {
-                throw ex;
-            }
-
+            int byteSent = await Task<int>.Factory.FromAsync(
+                (callback, state) => socket.BeginSend(buffer, offset, size, socketFlags, callback, state),
+                (asyncResult) => socket.EndSend(asyncResult),
+                null
+            );
             return byteSent;
         }
     }
