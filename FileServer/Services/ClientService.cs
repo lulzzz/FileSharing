@@ -40,8 +40,8 @@ namespace FileServer.Services
 
         private bool isRunning;
 
-        private QueueAsync<(byte[] data, EndPoint client)> incommingData;
-        private QueueAsync<(byte[] data, EndPoint client)> outgoingData;
+        private QueueAsync<(byte[] data, EndPoint client)> incommingData = new QueueAsync<(byte[] data, EndPoint client)>();
+        private QueueAsync<(byte[] data, EndPoint client)> outgoingData = new QueueAsync<(byte[] data, EndPoint client)>();
 
         private CancellationTokenSource tokenSource;
 
@@ -173,13 +173,13 @@ namespace FileServer.Services
         {
             if (!this.isRunning)
                 return;
+            this.isRunning = false;
 
             this.tokenSource.Cancel();
             this.udpSocket.Close();
             this.incommingData.Clear();
             this.outgoingData.Clear();
             this.udpSocket = new Socket(this.localEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-            this.isRunning = false;
         }
     }
 }
