@@ -53,6 +53,13 @@ namespace MasterServer.Storages
                     metaData.FileServiceIP = downloadIP;
                     metaData.FileServicePort = downloadPort;
                 }
+                else
+                {
+                    this.fileServers[fileServerId] = new FileServerMeta() {
+                        FileServiceIP = downloadIP,
+                        FileServicePort = downloadPort
+                    };
+                }
             }
         }
 
