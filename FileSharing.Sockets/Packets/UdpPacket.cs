@@ -69,6 +69,8 @@ namespace FileSharing.Sockets.Packets
         public UdpPacket(UdpPacket udpPacket)
         {
             this.PacketType = udpPacket.PacketType;
+
+            this.PayloadBuffer = new MemoryStream();
             udpPacket.PayloadBuffer.WriteTo(this.PayloadBuffer);
         }
 
