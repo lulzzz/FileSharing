@@ -40,8 +40,8 @@ namespace FileServer.Services
 
         private bool isRunning;
 
-        private QueueAsync<(byte[] data, EndPoint client)> incommingData = new QueueAsync<(byte[] data, EndPoint client)>();
-        private QueueAsync<(byte[] data, EndPoint client)> outgoingData = new QueueAsync<(byte[] data, EndPoint client)>();
+        private BufferBlock<(byte[] data, EndPoint client)> incommingData;
+        private BufferBlock<(byte[] data, EndPoint client)> outgoingData;
 
         private CancellationTokenSource tokenSource;
 
@@ -62,15 +62,14 @@ namespace FileServer.Services
 
             this.udpSocket.Bind(this.localEndPoint);
             if (this.udpSocket.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork)
-            {
                 this.udpSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.PacketInformation, true);
-            }
             else
-            {
                 this.udpSocket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.PacketInformation, true);
-            }
 
             this.tokenSource = new CancellationTokenSource();
+
+            this.incommingData = new BufferBlock<(byte[] data, EndPoint client)>();
+            this.outgoingData = new BufferBlock<(byte[] data, EndPoint client)>();
 
             this.ReceiveLoop(this.tokenSource.Token).ContinueWith(task => { }, TaskContinuationOptions.OnlyOnFaulted);
             this.ProcessLoop(this.tokenSource.Token).ContinueWith(task => { }, TaskContinuationOptions.OnlyOnFaulted);
@@ -86,7 +85,8 @@ namespace FileServer.Services
             {
                 var receiveResult = await this.udpSocket.ReceiveFromAsync(buffer, 0, UdpPacket.MaxUDPSize, SocketFlags.None);
                 byte[] data = new byte[receiveResult.ReceivedBytes];
-                this.incommingData.Add((data: data, client: receiveResult.RemoteEndPoint));
+                Array.Copy(buffer, 0, data, 0, receiveResult.ReceivedBytes);
+                this.incommingData.Post((data: data, client: receiveResult.RemoteEndPoint));
             }
         }
 
@@ -94,7 +94,7 @@ namespace FileServer.Services
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var (data, endPoint) = await this.incommingData.Take();
+                var (data, endPoint) = await this.incommingData.ReceiveAsync();
                 var udpPacket = new UdpPacket(data);
 
                 switch (udpPacket.PacketType)
@@ -103,7 +103,7 @@ namespace FileServer.Services
                         {
                             var packet = new RequestFileInfoPacket(udpPacket);
                             byte[] returnBytes = this.CreateReturnFileInfoPacket(packet).GetBytes();
-                            this.outgoingData.Add((returnBytes, endPoint));
+                            this.outgoingData.Post((returnBytes, endPoint));
                         }
                         break;
                     case (byte)FileServerOpCode.RequestBlock:
@@ -111,7 +111,7 @@ namespace FileServer.Services
                             var packet = new RequestBlockPacket(udpPacket);
                             var returnPacket = await CreateReturnBlockPacket(packet);
                             byte[] returnBytes = returnPacket.GetBytes();
-                            this.outgoingData.Add((returnBytes, endPoint));
+                            this.outgoingData.Post((returnBytes, endPoint));
                         }
                         break;
                     default:
@@ -128,7 +128,7 @@ namespace FileServer.Services
             if (fileDetails != null)
             {
                 int fileID = this.settings.SharedFileStorage.GetID(fileDetails.Name);
-                int blockCount = (int)Math.Ceiling((double)(fileDetails.Size / MaxFileBlockSize));
+                int blockCount = (int)Math.Ceiling(fileDetails.Size / (double) MaxFileBlockSize);
                 return new ReturnFileInfoPacket(fileID, fileDetails.SHA512Hash, fileDetails.Size, MaxFileBlockSize, blockCount, fileDetails.Name);
             }
             else
@@ -142,7 +142,7 @@ namespace FileServer.Services
             var fileDetails = this.settings.SharedFileStorage.GetFile(requestBlockPacket.FileID);
             if (fileDetails != null)
             {
-                using (var fileStream = File.OpenRead("FileStorage"))
+                using (var fileStream = File.OpenRead(Path.Combine("FileStorage", fileDetails.Name)))
                 {
                     fileStream.Seek((requestBlockPacket.BlockNumber - 1) * MaxFileBlockSize, SeekOrigin.Begin);
                     byte[] buffer = new byte[MaxFileBlockSize];
@@ -164,7 +164,7 @@ namespace FileServer.Services
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                var (data, endPoint) = await this.outgoingData.Take();
+                var (data, endPoint) = await this.outgoingData.ReceiveAsync();
                 await this.udpSocket.SendToAsync(data, 0, data.Length, SocketFlags.None, endPoint);
             }
         }
@@ -177,8 +177,8 @@ namespace FileServer.Services
 
             this.tokenSource.Cancel();
             this.udpSocket.Close();
-            this.incommingData.Clear();
-            this.outgoingData.Clear();
+            this.incommingData.Complete();
+            this.outgoingData.Complete();
             this.udpSocket = new Socket(this.localEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
         }
     }
