@@ -108,6 +108,7 @@ namespace MasterServer.Services
             var client = new Client(id, tcpSocket, this.tcpPacketProcessor);
             client.ClientClosed += Client_ClientClosed;
             client.TcpSocketWorker.Run();
+            this.clients.Add(id, client);
         }
 
         private void Client_ClientClosed(object sender, ClientClosedArgs e)
