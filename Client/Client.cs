@@ -30,16 +30,19 @@ namespace Client
             });
 
             masterServiceClient.Start();
-            await masterServiceClient.MasterServer.RequestFileList();
-            masterServiceClient.Stop();
+            // Always set callback at first.
             masterServiceClient.FileListReceived += (sender, args) =>
             {
-                this.fileList = args.FileList;
-
+                this.fileList.Clear();
+                this.fileList.AddRange(args.FileList);
+                Console.Beep();
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("Thông báo: Đã nhận được danh sách tập tin.");
                 Console.ResetColor();
+
+                masterServiceClient.Stop();
             };
+            await masterServiceClient.MasterServer.RequestFileList();
         }
 
         public async Task DownloadFile(int index)

@@ -141,6 +141,8 @@ namespace FileSharing.Client.Clients
                 this.tokenSource.Token
             );
 
+            await Task.Delay(3000);
+
             await Task.Run(() =>
             {
                 byte[] sha512Hash = returnFileInfoPacket.SHA512Hash;
@@ -157,8 +159,6 @@ namespace FileSharing.Client.Clients
                     }
                 }
             });
-
-            this.udpSocket.Close();
         }
 
         private async Task ReceiveLoop(BufferBlock<byte[]> incommingData, CancellationToken cancellationToken)
@@ -168,7 +168,8 @@ namespace FileSharing.Client.Clients
             {
                 var receivedBytes = await udpSocket.ReceiveAsync(buffer, 0, buffer.Length, SocketFlags.None);
                 byte[] data = new byte[receivedBytes];
-                await incommingData.SendAsync(data);
+                Array.Copy(buffer, 0, data, 0, receivedBytes);
+                incommingData.Post(data);
             }
         }
 
@@ -178,7 +179,9 @@ namespace FileSharing.Client.Clients
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    byte[] packetData = await incommingData.ReceiveAsync(cancellationToken);
+                    byte[] packetData;
+                    packetData = await incommingData.ReceiveAsync(cancellationToken);
+
                     var udpPacket = new UdpPacket(packetData);
 
                     if (udpPacket.PacketType != (byte)FileServerOpCode.ReturnBlock)
@@ -214,7 +217,7 @@ namespace FileSharing.Client.Clients
             HashSet<int> downloadedBlocks = new HashSet<int>();
             _ = this.SaveBlocks(fileID, fileName, maxBlockSize, incommingData, downloadedBlocks, cancellationToken).ContinueWith(task =>
             {
-                //
+
             }, TaskContinuationOptions.OnlyOnFaulted);
 
             do
@@ -231,6 +234,8 @@ namespace FileSharing.Client.Clients
 
                 await Task.Delay(3000, cancellationToken);
             } while (downloadedBlocks.Count != blockCount);
+
+            incommingData.Complete();
         }
 
         public void Cancel()
