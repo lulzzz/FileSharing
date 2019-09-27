@@ -112,7 +112,7 @@ namespace MasterServer.Services
             fileServer.FileServerClosed += this.OnFileServerTcpSocketWorkerClosed;
 
             fileServer.TcpSocketWorker.Run();
-            this.fileServers.Add(this.fileServerIdIncrement, fileServer);
+            this.fileServers.Add(id, fileServer);
         }
 
         public void Start()
