@@ -61,6 +61,9 @@ namespace Client
         {
             string masterServerIP = GetMasterServerIP();
             int masterServerPort = GetMasterServerPort();
+            //string masterServerIP = "127.0.0.1";
+            //int masterServerPort = 7000;
+
             var client = new Client(masterServerIP, masterServerPort);
 
             ConsoleKeyInfo pressedKey;

@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileServer", "FileServer\Fi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{563AD582-6EB2-456C-B61A-F770611907D6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileSharing.Sockets", "FileSharing.Sockets\FileSharing.Sockets.csproj", "{6424F425-5D26-4D34-8D4E-D472A9360F06}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileSharing.Commons", "FileSharing.Commons\FileSharing.Commons.csproj", "{94F479CE-E0ED-48FF-8CE1-1854087CF94B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{563AD582-6EB2-456C-B61A-F770611907D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{563AD582-6EB2-456C-B61A-F770611907D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{563AD582-6EB2-456C-B61A-F770611907D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6424F425-5D26-4D34-8D4E-D472A9360F06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6424F425-5D26-4D34-8D4E-D472A9360F06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6424F425-5D26-4D34-8D4E-D472A9360F06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6424F425-5D26-4D34-8D4E-D472A9360F06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94F479CE-E0ED-48FF-8CE1-1854087CF94B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94F479CE-E0ED-48FF-8CE1-1854087CF94B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94F479CE-E0ED-48FF-8CE1-1854087CF94B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94F479CE-E0ED-48FF-8CE1-1854087CF94B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
